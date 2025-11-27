@@ -49,7 +49,10 @@ export async function addQuestion(question: string, answer: string): Promise<str
     createdAt: serverTimestamp(),
   };
 
-  const docRef = await addDoc(faqCollection, newFaq as DocumentData).catch(serverError => {
+  try {
+    const docRef = await addDoc(faqCollection, newFaq as DocumentData);
+    return docRef.id;
+  } catch (serverError: any) {
     if (serverError.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
         path: faqCollection.path,
@@ -57,13 +60,13 @@ export async function addQuestion(question: string, answer: string): Promise<str
         requestResourceData: newFaq,
       });
       errorEmitter.emit('permission-error', permissionError);
-      return null; // Return null to indicate permission error
+      return null;
     }
-    // For other errors, re-throw them to be handled by the caller
-    throw serverError;
-  });
-
-  return docRef ? docRef.id : null;
+    // For other errors, we can re-throw or handle them as needed.
+    // For now, let's just log and return null.
+    console.error("An unexpected error occurred in addQuestion:", serverError);
+    return null;
+  }
 }
 
 // This function is no longer used but kept for potential future use.
@@ -73,8 +76,21 @@ export async function getPendingFAQs(): Promise<FAQ[]> {
 
 export async function getApprovedFAQs(): Promise<FAQ[]> {
   const q = query(faqCollection, orderBy('createdAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(mapDocToFAQ);
+  try {
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(mapDocToFAQ);
+  } catch (serverError: any) {
+     if (serverError.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: faqCollection.path,
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      return []; // Return empty array on permission error
+    }
+     // For other errors, re-throw them to be handled by the caller/boundary
+    throw serverError;
+  }
 }
 
 // These actions are no longer used from the UI but kept for potential direct use.
