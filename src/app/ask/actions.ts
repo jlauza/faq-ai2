@@ -30,8 +30,17 @@ export async function submitQuestion(
       throw new Error('AI failed to generate an answer.');
     }
     
-    // The addQuestion function now handles its own errors and does not throw
-    await addQuestion(question, answer);
+    const newQuestionId = await addQuestion(question, answer);
+    
+    if (newQuestionId === null) {
+      // A permission error was handled by the error emitter,
+      // but we need to stop execution here and inform the client.
+      // The specific error is already displayed via a toast.
+      return {
+        message: 'Failed to submit question due to a permission error.',
+        success: false,
+      };
+    }
 
     revalidatePath('/');
 
@@ -43,6 +52,7 @@ export async function submitQuestion(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    // This will now primarily catch AI generation errors or unexpected Firestore errors
     return {
       message: `Failed to submit question: ${errorMessage}`,
       success: false,

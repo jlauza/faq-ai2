@@ -43,29 +43,32 @@ const mapDocToFAQ = (doc: DocumentData): FAQ => {
 };
 
 export async function addQuestion(question: string, answer: string): Promise<string | null> {
-  const newFaq: Omit<FAQDocument, 'status'> = { // Status removed
+  const newFaq: Omit<FAQDocument, 'status'> = {
     question,
     answer,
     createdAt: serverTimestamp(),
   };
 
   try {
-    // @ts-ignore
-    const docRef = await addDoc(faqCollection, newFaq);
-    return docRef.id;
-  } catch (serverError: any) {
-    if (serverError.code === 'permission-denied') {
-      const permissionError = new FirestorePermissionError({
-        path: faqCollection.path,
-        operation: 'create',
-        requestResourceData: newFaq,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    } else {
-       // For other errors, you might want to re-throw or handle differently
-       throw serverError;
-    }
-    return null;
+    const docRef = await addDoc(faqCollection, newFaq as DocumentData).catch(serverError => {
+      if (serverError.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: faqCollection.path,
+          operation: 'create',
+          requestResourceData: newFaq,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        return null; // Return null to indicate permission error
+      }
+      // For other errors, re-throw them to be caught by the outer try/catch
+      throw serverError;
+    });
+    
+    return docRef ? docRef.id : null;
+  } catch (error) {
+    // This will catch errors not related to permissions
+    console.error("An unexpected error occurred in addQuestion:", error);
+    throw error; // Re-throw to be handled by the caller
   }
 }
 
