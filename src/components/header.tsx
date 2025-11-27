@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { HelpCircle, MessageSquarePlus, UserCog } from 'lucide-react';
+import { HelpCircle, MessageSquarePlus } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function Header() {
@@ -29,15 +29,6 @@ export function Header() {
               >
                 <MessageSquarePlus className="mr-2 h-4 w-4" />
                 Ask
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild>
-              <Link
-                href="/admin"
-                className="text-sm font-medium transition-colors"
-              >
-                <UserCog className="mr-2 h-4 w-4" />
-                Admin
               </Link>
             </Button>
           </nav>

@@ -5,6 +5,8 @@ import { addQuestion } from '@/services/firebase-service';
 import { revalidatePath } from 'next/cache';
 
 type FormState = {
+  question?: string;
+  answer?: string;
   message: string;
   success: boolean;
 };
@@ -30,10 +32,12 @@ export async function submitQuestion(
     
     await addQuestion(question, answer);
 
-    revalidatePath('/admin');
+    revalidatePath('/');
 
     return {
-      message: 'Your question has been submitted and is pending approval.',
+      question,
+      answer,
+      message: 'Your question has been answered!',
       success: true,
     };
   } catch (error) {

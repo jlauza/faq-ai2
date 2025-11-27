@@ -5,7 +5,6 @@ import {
   addDoc,
   getDocs,
   query,
-  where,
   doc,
   updateDoc,
   deleteDoc,
@@ -38,39 +37,35 @@ const mapDocToFAQ = (doc: DocumentData): FAQ => {
     id: doc.id,
     question: data.question,
     answer: data.answer,
-    status: data.status,
     createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
   };
 };
 
 export async function addQuestion(question: string, answer: string): Promise<string> {
-  const newFaq: FAQDocument = {
+  const newFaq: Omit<FAQDocument, 'status'> = { // Status removed
     question,
     answer,
-    status: 'pending',
     createdAt: serverTimestamp(),
   };
+  // @ts-ignore
   const docRef = await addDoc(faqCollection, newFaq);
   return docRef.id;
 }
 
+// This function is no longer used but kept for potential future use.
 export async function getPendingFAQs(): Promise<FAQ[]> {
-  const q = query(faqCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(mapDocToFAQ);
+ return [];
 }
 
 export async function getApprovedFAQs(): Promise<FAQ[]> {
-  const q = query(faqCollection, where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
+  const q = query(faqCollection, orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(mapDocToFAQ);
 }
 
+// These actions are no longer used from the UI but kept for potential direct use.
 export async function approveFaq(id: string): Promise<void> {
-  const faqDoc = doc(db, 'faqs', id);
-  await updateDoc(faqDoc, {
-    status: 'approved',
-  });
+  // No-op, all questions are approved by default now.
 }
 
 export async function deleteFaq(id: string): Promise<void> {
@@ -83,5 +78,5 @@ export async function getFirestoreData(): Promise<string> {
     const q = query(faqCollection, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     const faqs = querySnapshot.docs.map(mapDocToFAQ);
-    return JSON.stringify(faqs.map(faq => ({ question: faq.question, answer: faq.answer, status: faq.status })));
+    return JSON.stringify(faqs.map(faq => ({ question: faq.question, answer: faq.answer })));
 }
