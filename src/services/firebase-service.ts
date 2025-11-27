@@ -49,10 +49,13 @@ export async function addQuestion(question: string, answer: string): Promise<str
     createdAt: serverTimestamp(),
   };
 
-  try {
-    const docRef = await addDoc(faqCollection, newFaq as DocumentData);
-    return docRef.id;
-  } catch (serverError: any) {
+  // The 'addDoc' function returns a Promise that resolves with a DocumentReference.
+  // We can capture this reference to get the ID.
+  const docRefPromise = addDoc(faqCollection, newFaq as DocumentData);
+
+  // We attach a .catch() block to handle potential permission errors.
+  // This is the recommended pattern for non-blocking UI updates.
+  docRefPromise.catch((serverError: any) => {
     if (serverError.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
         path: faqCollection.path,
@@ -60,11 +63,20 @@ export async function addQuestion(question: string, answer: string): Promise<str
         requestResourceData: newFaq,
       });
       errorEmitter.emit('permission-error', permissionError);
-      return null;
+    } else {
+      // For other unexpected errors, we can still log them.
+      console.error('An unexpected error occurred in addQuestion:', serverError);
     }
-    // For other errors, we can re-throw or handle them as needed.
-    // For now, let's just log and return null.
-    console.error("An unexpected error occurred in addQuestion:", serverError);
+  });
+
+  // We immediately await the promise. If it rejects, the error will be caught
+  // by the Server Action's try/catch block. If it resolves, we get the ID.
+  try {
+    const docRef = await docRefPromise;
+    return docRef.id;
+  } catch (error) {
+    // The .catch() block above will have already emitted the permission error.
+    // We return null to signal failure to the action.
     return null;
   }
 }

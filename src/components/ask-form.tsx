@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 const initialState = {
   message: '',
   success: false,
+  question: '',
+  answer: '',
 };
 
 function SubmitButton() {
