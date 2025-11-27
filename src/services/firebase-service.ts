@@ -49,27 +49,21 @@ export async function addQuestion(question: string, answer: string): Promise<str
     createdAt: serverTimestamp(),
   };
 
-  try {
-    const docRef = await addDoc(faqCollection, newFaq as DocumentData).catch(serverError => {
-      if (serverError.code === 'permission-denied') {
-        const permissionError = new FirestorePermissionError({
-          path: faqCollection.path,
-          operation: 'create',
-          requestResourceData: newFaq,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        return null; // Return null to indicate permission error
-      }
-      // For other errors, re-throw them to be caught by the outer try/catch
-      throw serverError;
-    });
-    
-    return docRef ? docRef.id : null;
-  } catch (error) {
-    // This will catch errors not related to permissions
-    console.error("An unexpected error occurred in addQuestion:", error);
-    throw error; // Re-throw to be handled by the caller
-  }
+  const docRef = await addDoc(faqCollection, newFaq as DocumentData).catch(serverError => {
+    if (serverError.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: faqCollection.path,
+        operation: 'create',
+        requestResourceData: newFaq,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      return null; // Return null to indicate permission error
+    }
+    // For other errors, re-throw them to be handled by the caller
+    throw serverError;
+  });
+
+  return docRef ? docRef.id : null;
 }
 
 // This function is no longer used but kept for potential future use.
