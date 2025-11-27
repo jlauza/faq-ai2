@@ -30,6 +30,7 @@ export async function submitQuestion(
       throw new Error('AI failed to generate an answer.');
     }
     
+    // The addQuestion function now handles its own errors and does not throw
     await addQuestion(question, answer);
 
     revalidatePath('/');
@@ -41,7 +42,6 @@ export async function submitQuestion(
       success: true,
     };
   } catch (error) {
-    console.error('Error submitting question:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return {
       message: `Failed to submit question: ${errorMessage}`,

@@ -13,8 +13,9 @@ import {
   DocumentData,
 } from 'firebase/firestore';
 import type { FAQ, FAQDocument } from '@/lib/definitions';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
-// TODO: Replace with your actual Firebase config
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -41,15 +42,31 @@ const mapDocToFAQ = (doc: DocumentData): FAQ => {
   };
 };
 
-export async function addQuestion(question: string, answer: string): Promise<string> {
+export async function addQuestion(question: string, answer: string): Promise<string | null> {
   const newFaq: Omit<FAQDocument, 'status'> = { // Status removed
     question,
     answer,
     createdAt: serverTimestamp(),
   };
-  // @ts-ignore
-  const docRef = await addDoc(faqCollection, newFaq);
-  return docRef.id;
+
+  try {
+    // @ts-ignore
+    const docRef = await addDoc(faqCollection, newFaq);
+    return docRef.id;
+  } catch (serverError: any) {
+    if (serverError.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: faqCollection.path,
+        operation: 'create',
+        requestResourceData: newFaq,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    } else {
+       // For other errors, you might want to re-throw or handle differently
+       throw serverError;
+    }
+    return null;
+  }
 }
 
 // This function is no longer used but kept for potential future use.
