@@ -1,8 +1,8 @@
-'use server';
+"use server";
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { getApprovedFAQs } from '@/services/firebase-service';
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
+import { getApprovedFAQs } from "@/services/firebase-service";
 
 /* ---------------- Schemas ---------------- */
 
@@ -30,8 +30,8 @@ const GetRelevantInformationOutputSchema = z.string(); // JSON string
 
 const getRelevantInformation = ai.defineTool(
   {
-    name: 'getRelevantInformation',
-    description: 'Retrieves relevant company FAQs from Firestore.',
+    name: "getRelevantInformation",
+    description: "Retrieves relevant company FAQs from Firestore.",
     inputSchema: GetRelevantInformationInputSchema,
     outputSchema: GetRelevantInformationOutputSchema,
   },
@@ -51,7 +51,7 @@ const getRelevantInformation = ai.defineTool(
 /* ---------------- Prompt ---------------- */
 
 const prompt = ai.definePrompt({
-  name: 'generateAnswerFromQuestionPrompt',
+  name: "generateAnswerFromQuestionPrompt",
   input: { schema: GenerateAnswerFromQuestionInputSchema },
   output: { schema: GenerateAnswerFromQuestionOutputSchema },
   tools: [getRelevantInformation],
@@ -76,7 +76,7 @@ You are a company assistant AI.
 
 const generateAnswerFromQuestionFlow = ai.defineFlow(
   {
-    name: 'generateAnswerFromQuestionFlow',
+    name: "generateAnswerFromQuestionFlow",
     inputSchema: GenerateAnswerFromQuestionInputSchema,
     outputSchema: GenerateAnswerFromQuestionOutputSchema,
   },
@@ -87,9 +87,10 @@ const generateAnswerFromQuestionFlow = ai.defineFlow(
     console.log(faqs, cleanQ);
 
     // Try to find a matching FAQ
-    const match = faqs.find((faq: any) => {
-      const q = faq.question.toLowerCase();
-      return cleanQ.includes(q) || q.includes(cleanQ);
+    const match = faqs.find((faq) => {
+      const faqWords = faq.question.toLowerCase().split(/\s+/);
+      const inputWords = input.question.toLowerCase().split(/\s+/);
+      return faqWords.some((word) => inputWords.includes(word));
     });
 
     if (match) {
@@ -104,11 +105,11 @@ const generateAnswerFromQuestionFlow = ai.defineFlow(
     } else {
       // No company answer → let AI freestyle
       const { output } = await prompt({
-        question: '', // empty so AI knows no company data
+        question: "", // empty so AI knows no company data
       });
 
       return {
-        answer: output?.answer?.trim() || '❌ No answer available.',
+        answer: output?.answer?.trim() || "❌ No answer available.",
       };
     }
   }
