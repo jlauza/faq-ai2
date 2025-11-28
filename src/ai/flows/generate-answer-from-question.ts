@@ -84,8 +84,6 @@ const generateAnswerFromQuestionFlow = ai.defineFlow(
     const faqs = await getApprovedFAQs();
     const cleanQ = input.question.toLowerCase();
 
-    console.log(faqs, cleanQ);
-
     // Try to find a matching FAQ
     const match = faqs.find((faq) => {
       const faqWords = faq.question.toLowerCase().split(/\s+/);
