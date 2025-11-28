@@ -37,7 +37,6 @@ const getRelevantInformation = ai.defineTool(
   },
   async ({ question }) => {
     const faqs = await getApprovedFAQs();
-
     const cleanQ = question.toLowerCase();
 
     const relevantFaqs = faqs.filter((faq: any) => {
@@ -45,8 +44,7 @@ const getRelevantInformation = ai.defineTool(
       return cleanQ.includes(q) || q.includes(cleanQ);
     });
 
-    // If nothing matches, return EMPTY array (important)
-    return JSON.stringify(relevantFaqs);
+    return JSON.stringify(relevantFaqs); // return empty array if none match
   }
 );
 
@@ -59,24 +57,18 @@ const prompt = ai.definePrompt({
   tools: [getRelevantInformation],
 
   prompt: `
-Use the getRelevantInformation tool to retrieve company FAQs.
+Use the following company answer (if any) strictly. 
+If no answer is provided, generate a helpful answer using your AI knowledge.
 
-Question: {{{question}}}
-
-Answer using ONLY the retrieved data.
-If no relevant FAQ is found, respond exactly with:
-"❌ No company SOP found for this question."
+Company Answer (DO NOT ADD INFO beyond this):
+{{{question}}}
 `,
 
   system: `
-You are a STRICT company SOP assistant.
-You MUST:
-- Use ONLY the retrieved FAQ data.
-- NEVER use outside knowledge.
-- NEVER guess.
-- NEVER improve beyond what is written.
-- If data is empty, output exactly:
-"❌ No company SOP found for this question."
+You are a company assistant AI.
+- Always use the company FAQ if available.
+- NEVER hallucinate if the company answer exists.
+- If no company answer, you MAY generate an answer based on your AI knowledge.
 `,
 });
 
@@ -89,14 +81,36 @@ const generateAnswerFromQuestionFlow = ai.defineFlow(
     outputSchema: GenerateAnswerFromQuestionOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const faqs = await getApprovedFAQs();
+    const cleanQ = input.question.toLowerCase();
 
-    // Final safety muzzle
-    if (!output?.answer || output.answer.trim().length === 0) {
-      return { answer: '❌ No company SOP found for this question.' };
+    console.log(faqs, cleanQ);
+
+    // Try to find a matching FAQ
+    const match = faqs.find((faq: any) => {
+      const q = faq.question.toLowerCase();
+      return cleanQ.includes(q) || q.includes(cleanQ);
+    });
+
+    if (match) {
+      // Found company answer: strictly return or lightly rephrase
+      const { output } = await prompt({
+        question: match.answer,
+      });
+
+      return {
+        answer: output?.answer?.trim() || match.answer,
+      };
+    } else {
+      // No company answer → let AI freestyle
+      const { output } = await prompt({
+        question: '', // empty so AI knows no company data
+      });
+
+      return {
+        answer: output?.answer?.trim() || '❌ No answer available.',
+      };
     }
-
-    return output!;
   }
 );
 
