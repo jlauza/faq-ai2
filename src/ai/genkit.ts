@@ -1,10 +1,12 @@
 import {genkit} from 'genkit';
-import openAI from 'genkitx-openai';
-// import {googleAI} from '@genkit-ai/google-genai';
+import openAI, {gpt4} from 'genkitx-openai';
+import {googleAI} from '@genkit-ai/google-genai';
+
+const preferredModels = ['gpt-4', 'gpt-3.5-turbo'];
 
 export const ai = genkit({
-  plugins: [openAI({ apiKey: process.env.OPENAI_API_KEY })],
-  model: 'gpt-4', // or gpt-4-32k, etc.
-  // plugins: [googleAI()],
-  // model: 'googleai/gemini-2.5-flash',  
+  // plugins: [openAI({ apiKey: process.env.OPENAI_API_KEY })],
+  // model: preferredModels[1],
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.5-flash',  
 });
