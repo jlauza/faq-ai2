@@ -1,7 +1,8 @@
 'use server';
 
 import { generateAnswerFromQuestion } from '@/ai/flows/generate-answer-from-question';
-import { addQuestion } from '@/services/firebase-service';
+// The addQuestion import is no longer needed
+// import { addQuestion } from '@/services/firebase-service';
 import { revalidatePath } from 'next/cache';
 
 type FormState = {
@@ -30,19 +31,18 @@ export async function submitQuestion(
       throw new Error('AI failed to generate an answer.');
     }
     
-    const newQuestionId = await addQuestion(question, answer);
+    // The following lines that save the question have been removed.
+    // const newQuestionId = await addQuestion(question, answer);
     
-    if (newQuestionId === null) {
-      // A permission error was handled by the error emitter,
-      // but we need to stop execution here and inform the client.
-      // The specific error is already displayed via a toast.
-      return {
-        message: 'Failed to submit question due to a permission error.',
-        success: false,
-      };
-    }
+    // if (newQuestionId === null) {
+    //   return {
+    //     message: 'Failed to submit question due to a permission error.',
+    //     success: false,
+    //   };
+    // }
 
-    revalidatePath('/');
+    // Revalidating the path is no longer necessary as data isn't changing.
+    // revalidatePath('/');
 
     return {
       question,
@@ -52,9 +52,8 @@ export async function submitQuestion(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // This will now primarily catch AI generation errors or unexpected Firestore errors
     return {
-      message: `Failed to submit question: ${errorMessage}`,
+      message: `Failed to get an answer: ${errorMessage}`,
       success: false,
     };
   }
