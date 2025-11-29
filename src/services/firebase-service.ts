@@ -90,7 +90,12 @@ export async function getApprovedFAQs(): Promise<FAQ[]> {
   const q = query(faqCollection, orderBy('createdAt', 'desc'));
   try {
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(mapDocToFAQ);
+    const faqs = querySnapshot.docs.map(mapDocToFAQ);
+    console.log('--- Firestore Data Test ---');
+    console.log(`Found ${faqs.length} documents.`);
+    console.log(faqs);
+    console.log('-------------------------');
+    return faqs;
   } catch (serverError: any) {
      if (serverError.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
